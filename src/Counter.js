@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import { connect } from 'react-redux';
 import { increment, decrement, incrementAsync } from './index.redux';
 
-class App extends Component {
+class Counter extends Component {
   render(){
     const {number,increment,decrement,incrementAsync} = this.props;
     return(
@@ -17,10 +17,8 @@ class App extends Component {
 }
 
 const mapStateToProps = (state)=>{
-  return { number: state }
+  return { number: state.count }
 };
 const actionCreators = { increment, decrement, incrementAsync };
 
-App = connect(mapStateToProps, actionCreators)(App);
-
-export default App;
+export default connect(mapStateToProps, actionCreators)(Counter);
