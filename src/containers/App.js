@@ -1,6 +1,7 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'react-redux'
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import {
   selectSubreddit,
   fetchPostsIfNeeded,
@@ -11,32 +12,33 @@ import Posts from '../components/Posts';
 
 class App extends Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.handleChange = this.handleChange.bind(this);
     this.handleRefreshClick = this.handleRefreshClick.bind(this)
   }
 
   componentDidMount() {
-    const {selectedSubreddit} = this.props;
-    fetchPostsIfNeeded(selectedSubreddit);
+    const {selectedSubreddit, dispatch} = this.props;
+    dispatch(fetchPostsIfNeeded(selectedSubreddit));
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.selectedSubreddit !== this.props.selectedSubreddit) {
-      const { selectedSubreddit } = nextProps;
-      fetchPostsIfNeeded(selectedSubreddit);
+      const { selectedSubreddit, dispatch } = nextProps;
+      dispatch(fetchPostsIfNeeded(selectedSubreddit));
     }
   }
 
   handleChange(nextSubreddit) {
-    selectSubreddit(nextSubreddit);
+    const { dispatch } = this.props;
+    dispatch(selectSubreddit(nextSubreddit));
   }
 
   handleRefreshClick(e) {
     e.preventDefault();
-    const {selectedSubreddit } = this.props;
-    invalidateSubreddit(selectedSubreddit);
-    fetchPostsIfNeeded(selectedSubreddit);
+    const { selectedSubreddit,dispatch } = this.props;
+    dispatch(invalidateSubreddit(selectedSubreddit));
+    dispatch(fetchPostsIfNeeded(selectedSubreddit));
   }
 
   render() {
@@ -99,9 +101,14 @@ function mapStateToProps(state) {
   }
 }
 
-export default connect(mapStateToProps,{
-  selectSubreddit,
-  fetchPostsIfNeeded,
-  invalidateSubreddit
-})(App)
+
+
+const mapDispatchToProps = function (dispatch) {
+  return {
+    redditActionCreator: bindActionCreators({selectSubreddit,fetchPostsIfNeeded, invalidateSubreddit},dispatch),
+  }
+};
+//export default connect(mapStateToProps, mapDispatchToProps)(App)
+
+export default connect(mapStateToProps)(App)
 
