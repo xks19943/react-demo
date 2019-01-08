@@ -1,54 +1,133 @@
+//所有的action
+const REQUEST_POSTS = 'REQUEST_POSTS';
+const RECEIVE_POSTS = 'RECEIVE_POSTS';
+const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT';
+const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT';
 
 
-//action
-const INCREMENT = 'INCREMENT';
-const DECREMENT = 'DECREMENT';
+//对应的actionCreator
+export function selectSubreddit(subreddit) {
+  return {
+    type: SELECT_SUBREDDIT,
+    subreddit
+  }
+}
+
+export function invalidateSubreddit(subreddit) {
+  return {
+    type: INVALIDATE_SUBREDDIT,
+    subreddit
+  }
+}
+
+function requestPosts(subreddit) {
+  return {
+    type: REQUEST_POSTS,
+    subreddit
+  }
+}
+
+
+function receivePosts(subreddit, json) {
+  return {
+    type: RECEIVE_POSTS,
+    subreddit,
+    posts: json.data.children.map(child => child.data),
+    receivedAt: Date.now()
+  }
+}
+
+
+function fetchPosts(subreddit) {
+  return dispatch => {
+    dispatch(requestPosts(subreddit));
+    return fetch(`https://www.reddit.com/r/${subreddit}.json`)
+      .then(response => response.json())
+      .then(json => dispatch(receivePosts(subreddit, json)))
+  }
+}
 
 
 
-/**
- * 这是一个 reducer，形式为 (state, action) => state 的纯函数。
- * 描述了 action 如何把 state 转变成下一个 state。
- *
- * state 的形式取决于你，可以是基本类型、数组、对象、
- * 甚至是 Immutable.js 生成的数据结构。惟一的要点是
- * 当 state 变化时需要返回全新的对象，而不是修改传入的参数。
- *
- * 下面例子使用 `switch` 语句和字符串来做判断，但你可以写帮助类(helper)
- * 根据不同的约定（如方法映射）来判断，只要适用你的项目即可。
- *
- **/
-export function counter(state = 0, action) {
+function shouldFetchPosts(state, subreddit) {
+  const posts = state.postsBySubreddit[subreddit];
+  if (!posts) {
+    return true
+  } else if (posts.isFetching) {
+    return false
+  } else {
+    return posts.didInvalidate
+  }
+}
+
+export function fetchPostsIfNeeded(subreddit) {
+  return (dispatch, getState) => {
+    if (shouldFetchPosts(getState(), subreddit)) {
+      return dispatch(fetchPosts(subreddit))
+    }
+  }
+}
+
+
+
+
+//这个是reducer纯函数
+export function selectedSubreddit(state = 'reactjs', action) {
   switch (action.type) {
-    case 'INCREMENT':
-      return state + 1;
-    case 'DECREMENT':
-      return state - 1;
+    case SELECT_SUBREDDIT:
+      return action.subreddit;
     default:
-      return state;
+      return state
+  }
+}
+
+
+function posts(
+  state = {
+    isFetching: false,
+    didInvalidate: false,
+    items: []
+  },
+  action
+) {
+  switch (action.type) {
+    case INVALIDATE_SUBREDDIT:
+      return Object.assign({}, state, {
+        didInvalidate: true
+      });
+    case REQUEST_POSTS:
+      return Object.assign({}, state, {
+        isFetching: true,
+        didInvalidate: false
+      });
+    case RECEIVE_POSTS:
+      return Object.assign({}, state, {
+        isFetching: false,
+        didInvalidate: false,
+        items: action.posts,
+        lastUpdated: action.receivedAt
+      });
+    default:
+      return state
+  }
+}
+
+
+//这个也是reducer纯函数
+export function postsBySubreddit(state = {}, action) {
+  switch (action.type) {
+    case INVALIDATE_SUBREDDIT:
+    case RECEIVE_POSTS:
+    case REQUEST_POSTS:
+      return Object.assign({}, state, {
+        [action.subreddit]: posts(state[action.subreddit], action)
+      });
+    default:
+      return state
   }
 }
 
 
 
-//action creator
-export function increment() {
-  return {
-    type: INCREMENT
-  }
-}
-export function decrement() {
-  return {
-    type: DECREMENT
-  }
-}
-
-export function incrementAsync() {
-  return function (dispatch) {
-    setTimeout(function () {
-      dispatch(increment());
-    },2000);
-  }
-}
 
 
