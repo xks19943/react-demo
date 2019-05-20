@@ -8,7 +8,6 @@ import reducers from './reducer';
 import { BrowserRouter,Switch, Route, Redirect} from 'react-router-dom';
 import DashBoard from './DashBoard';
 import Login from "./Login";
-import App from "./Counter";
 
 // 创建 Redux store 来存放应用的状态。
 // API 是 { subscribe, dispatch, getState }。
